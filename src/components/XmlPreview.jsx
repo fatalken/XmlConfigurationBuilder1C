@@ -12,6 +12,7 @@ const PreviewContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* чтобы не растягивать grid-колонку */
 `;
 
 const PreviewTitle = styled.h2`
@@ -64,14 +65,17 @@ const XmlContent = styled.div`
   flex: 1;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: auto; /* и горизонтальный и вертикальный скролл */
   background: #f8f9fa;
-  
+  min-width: 0;
+
+  /* Внутренний контейнер подсветки */
   pre {
     margin: 0;
     height: 100%;
     max-height: none;
     background: #f8f9fa !important;
+    white-space: pre; /* не переносим строки, скроллим */
   }
 `;
 
@@ -115,7 +119,9 @@ const XmlPreview = ({ xmlContent, onCopy }) => {
             height: '100%',
             fontSize: '13px',
             lineHeight: '1.4',
-            backgroundColor: '#f8f9fa'
+            backgroundColor: '#f8f9fa',
+            minWidth: 0,
+            overflowX: 'auto'
           }}
         >
           {xmlContent}

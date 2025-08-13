@@ -10,17 +10,22 @@ export const generateXml = (platformVersion, logs) => {
 
   logs.forEach((log) => {
     if (log.location && log.history) {
-      xmlContent += `\n\t<log location="${log.location}" history="${log.history}">`;
+      // Собираем строку атрибутов
+      const extraAttrs = (log.additionalAttributes || [])
+        .filter(a => a.attribute && a.value !== undefined && a.value !== '')
+        .map(a => `${a.attribute}="${a.value}"`)
+        .join(' ');
+
+      const attrsTail = extraAttrs ? ` ${extraAttrs}` : '';
+
+      xmlContent += `\n\t<log location="${log.location}" history="${log.history}"${attrsTail}>`;
 
       if (log.events && log.events.length > 0) {
         log.events.forEach((event) => {
           if (event.event) {
             xmlContent += `\n\t\t<event>`;
-
-            // Имя события
             xmlContent += `\n\t\t\t<eq property="name" value="${event.event}"/>`;
 
-            // Свойства события
             if (event.properties && event.properties.length > 0) {
               event.properties.forEach((property) => {
                 if (property.property && property.operator && property.value !== undefined) {
@@ -34,7 +39,6 @@ export const generateXml = (platformVersion, logs) => {
         });
       }
 
-      // Свойство all
       xmlContent += `\n\t\t<property name="all"/>`;
       xmlContent += `\n\t</log>`;
     }
@@ -44,3 +48,4 @@ export const generateXml = (platformVersion, logs) => {
 
   return xmlContent;
 };
+

@@ -43,3 +43,4 @@ const Notification = ({ message, isVisible, onHide }) => {
 };
 
 export default Notification;
+

@@ -41,10 +41,13 @@ const LeftPanel = styled.div`
   border: 1px solid #e9ecef;
   max-height: calc(100vh - 140px);
   overflow-y: auto;
+  min-width: 0;
 `;
 
 const RightPanel = styled.div`
   height: calc(100vh - 140px);
+  min-width: 0; /* критично для корректного горизонтального скролла внутри */
+  overflow: hidden; /* не даем колонке расширяться из-за вложенного контента */
 `;
 
 const PlatformSection = styled.div`
@@ -101,6 +104,7 @@ const App = () => {
   const availableEvents = getAllAvailableEvents();
   const operators = platformConfig.Operators || [];
   const eventDescriptions = platformConfig.EventDescriptions || {};
+  const attributesConfig = platformConfig.LogAttributes || {};
 
   const getAvailableProperties = (eventName) => {
     if (!platformVersion || !eventName) return [];
@@ -119,6 +123,7 @@ const App = () => {
       location: `C:\\logs\\log_${logs.length + 1}`,
       history: '24',
       events: [],
+      additionalAttributes: []
     };
 
     setLogs([...logs, newLog]);
@@ -201,6 +206,7 @@ const App = () => {
                     getAvailableProperties={getAvailableProperties}
                     operators={operators}
                     eventDescriptions={eventDescriptions}
+                    attributesConfig={attributesConfig}
                   />
                 ))}
               </>

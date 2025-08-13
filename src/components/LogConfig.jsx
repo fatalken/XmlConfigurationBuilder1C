@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import EventConfig from './EventConfig';
+import AdditionalAttributeRow from './AdditionalAttributeRow';
 
 const LogConfigContainer = styled.div`
   background: white;
@@ -13,7 +14,7 @@ const LogConfigContainer = styled.div`
 
 const LogHeader = styled.div`
   background: #f8f9fa;
-  padding: 16px 20px;
+  padding: 12px 16px; /* уменьшили на ~20% */
   border-bottom: 1px solid #e9ecef;
   cursor: pointer;
   display: flex;
@@ -24,6 +25,23 @@ const LogHeader = styled.div`
   &:hover {
     background: #e9ecef;
   }
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ArrowIcon = styled.span`
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #6c757d;
+  border-bottom: 2px solid #6c757d;
+  transform: ${props => (props.expanded ? 'rotate(45deg)' : 'rotate(-45deg)')};
+  transition: transform 0.2s ease;
+  margin-left: 4px;
 `;
 
 const LogTitle = styled.h3`
@@ -58,7 +76,7 @@ const RemoveButton = styled.button`
 
 const LogContent = styled.div`
   padding: 20px;
-  display: ${(props) => (props.isExpanded ? 'block' : 'none')};
+  display: ${props => (props.isExpanded ? 'block' : 'none')};
 `;
 
 const LogSettings = styled.div`
@@ -86,6 +104,59 @@ const SettingLabel = styled.label`
 
 const SettingInput = styled.input`
   min-width: 300px;
+`;
+
+const AdditionalSection = styled.div`
+  margin: 8px 0 20px 0;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+`;
+
+const AdditionalHeader = styled.div`
+  background: #f8f9fa;
+  padding: 10px 14px; /* уменьшили на ~15% */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid #e9ecef;
+`;
+
+const AdditionalHeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const AdditionalTitle = styled.div`
+  color: #495057;
+  font-weight: 600;
+`;
+
+const AddAttrButton = styled.button`
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background: #28a745;
+  }
+`;
+
+const AdditionalBody = styled.div`
+  padding: 12px 16px;
+`;
+
+const AddAttrButtonRow = styled.div`
+  margin-top: 8px;
 `;
 
 const EventsSection = styled.div`
@@ -126,9 +197,11 @@ const LogConfig = ({
   getAvailableProperties,
   operators,
   eventDescriptions,
+  attributesConfig,
 }) => {
+  const [additionalOpen, setAdditionalOpen] = useState(false);
+
   const handleLogSettingChange = (field, value) => {
-    // Проверка для времени хранения логов
     if (field === 'history') {
       const numValue = parseInt(value);
       if (numValue === 0) {
@@ -136,7 +209,6 @@ const LogConfig = ({
         return;
       }
     }
-    
     onConfigChange({
       ...config,
       [field]: value,
@@ -175,7 +247,23 @@ const LogConfig = ({
     handleEventsChange(newEvents);
   };
 
-  // Получаем имя конечной папки из пути
+  const handleAddAttribute = () => {
+    const newAttrs = [...(config.additionalAttributes || []), { attribute: '', value: '' }];
+    onConfigChange({ ...config, additionalAttributes: newAttrs });
+    setAdditionalOpen(true);
+  };
+
+  const handleAttributeChange = (idx, field, value) => {
+    const newAttrs = [...(config.additionalAttributes || [])];
+    newAttrs[idx] = { ...newAttrs[idx], [field]: value };
+    onConfigChange({ ...config, additionalAttributes: newAttrs });
+  };
+
+  const handleRemoveAttribute = (idx) => {
+    const newAttrs = (config.additionalAttributes || []).filter((_, i) => i !== idx);
+    onConfigChange({ ...config, additionalAttributes: newAttrs });
+  };
+
   const getFolderName = (path) => {
     if (!path) return '';
     const parts = path.split(/[\\\/]/);
@@ -187,7 +275,10 @@ const LogConfig = ({
   return (
     <LogConfigContainer>
       <LogHeader onClick={onToggle}>
-        <LogTitle>Лог-файл "{folderName || `log_${logIndex}`}"</LogTitle>
+        <HeaderLeft>
+          <LogTitle>Лог-файл "{folderName || `log_${logIndex}`}"</LogTitle>
+          <ArrowIcon expanded={isExpanded} />
+        </HeaderLeft>
         <RemoveButton
           onClick={(e) => {
             e.stopPropagation();
@@ -224,6 +315,35 @@ const LogConfig = ({
             />
           </SettingGroup>
         </LogSettings>
+
+        <AdditionalSection>
+          <AdditionalHeader onClick={() => setAdditionalOpen(!additionalOpen)}>
+            <AdditionalHeaderLeft>
+              <AdditionalTitle>Дополнительные атрибуты лога</AdditionalTitle>
+              <ArrowIcon expanded={additionalOpen} />
+            </AdditionalHeaderLeft>
+          </AdditionalHeader>
+          {additionalOpen && (
+            <AdditionalBody>
+              {(config.additionalAttributes || []).map((attr, idx) => (
+                <AdditionalAttributeRow
+                  key={idx}
+                  index={idx}
+                  attribute={attr.attribute}
+                  value={attr.value}
+                  onAttributeChange={(v) => handleAttributeChange(idx, 'attribute', v)}
+                  onValueChange={(v) => handleAttributeChange(idx, 'value', v)}
+                  onRemove={() => handleRemoveAttribute(idx)}
+                  attributesConfig={attributesConfig}
+                  listIdPrefix={`log${logIndex}`}
+                />
+              ))}
+              <AddAttrButtonRow>
+                <AddAttrButton onClick={handleAddAttribute}>Добавить атрибут</AddAttrButton>
+              </AddAttrButtonRow>
+            </AdditionalBody>
+          )}
+        </AdditionalSection>
 
         <EventsSection>
           <EventsTitle>События:</EventsTitle>
